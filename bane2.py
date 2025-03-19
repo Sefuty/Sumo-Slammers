@@ -2,7 +2,6 @@ import pygame
 import random
 import math
 from constants import *
-from bane import Player
 # landskab klasse
 
 
@@ -23,10 +22,6 @@ class Bane:
         self.void_y = platform_y + 30  # Start void a bit below platform
         
         # 
-        self.players = [
-            Player(200, 400, (255, 0, 0)),  # Player 1 (red)
-            Player(550, 400, (0, 0, 255))   # Player 2 (blue)
-        ]
         self.tree_positions = [
             {"x": self.width * 0.18, "health": 1.0},  # venstre træ
             
@@ -71,11 +66,6 @@ class Bane:
             self.current_theme = "night" if self.current_theme == "day" else "day"
             # Opdater tidspunkt for sidste ændring
             self.last_theme_change = current_time
-
-        for player in self.players:
-            player.fysik(self.platform_segments[0])
-
-        self.handle_collisions()
 
     # Tegn banen med alle elementer 
     def draw(self, surface: pygame.Surface):
@@ -237,19 +227,6 @@ class Bane:
             pygame.draw.rect(surface, (100, 65, 35), 
                            (platform.right, platform.top, 2, platform.height))
 
-        for player in self.players:
-            player.draw(surface)
-
-        # Draw damage percentage for each player
-        font = pygame.font.Font(None, 36)
-        for i, player in enumerate(self.players):
-            damage_text = f"{int(player.damage)}%"
-            text_surface = font.render(damage_text, True, (255, 255, 255))
-            text_rect = text_surface.get_rect()
-            text_rect.centerx = self.tree_positions[i]["x"]
-            text_rect.y = self.height * 0.2
-            surface.blit(text_surface, text_rect)
-
     # Tjek om en position er på en platform
     def is_on_platform(self, x, y):
         # Gennemgå alle platformsegmenter
@@ -274,68 +251,8 @@ class Bane:
         return min_y if min_y != float('inf') else None
 
     def handle_input(self):
-        # Player 1: WASD + LSHIFT for charge
-        self.players[0].move(pygame.K_a, pygame.K_d, pygame.K_LSHIFT, pygame.K_w, self.platform_segments[0])
-        # Player 2: Arrow keys + RSHIFT for charge
-        self.players[1].move(pygame.K_LEFT, pygame.K_RIGHT, pygame.K_RSHIFT, pygame.K_UP, self.platform_segments[0])
-
-    def handle_collisions(self):
-        player1, player2 = self.players
-        center1 = player1.hentmidt()
-        center2 = player2.hentmidt()
-
-        # Calculate the distance between the players
-        distance = math.dist(center1, center2)
-
-        # Check if players are colliding
-        if distance < PLAYER_RADIUS * 2:
-            # Calculate momentum and damage
-            p1_momentum = player1.hentpower()
-            p2_momentum = player2.hentpower()
-            
-            # The player with more momentum deals more damage
-            if p1_momentum > p2_momentum:
-                damage = p1_momentum * DAMAGE_MULTIPLIER
-                player2.damage += damage
-                knockback_mult = 1 + (player2.damage / 100)  # Increased knockback with damage
-                player2.fart_x = BASE_KNOCKBACK * knockback_mult * (1 if center1[0] < center2[0] else -1)
-                player2.fart_y = -5  # Add some vertical knockback
-                
-                # Update right tree health
-                self.tree_positions[1]["health"] = max(0, 1 - (player2.damage / 100))
-                
-            elif p2_momentum > p1_momentum:
-                damage = p2_momentum * DAMAGE_MULTIPLIER
-                player1.damage += damage
-                knockback_mult = 1 + (player1.damage / 100)  # Increased knockback with damage
-                player1.fart_x = BASE_KNOCKBACK * knockback_mult * (1 if center2[0] < center1[0] else -1)
-                player1.fart_y = -5  # Add some vertical knockback
-                
-                # Update left tree health
-                self.tree_positions[0]["health"] = max(0, 1 - (player1.damage / 100))
-
-            # Separate players
-            overlap = PLAYER_RADIUS * 2 - distance
-            direction = (center1[0] - center2[0], center1[1] - center2[1])
-            if direction[0] != 0 or direction[1] != 0:  # Avoid division by zero
-                norm = math.sqrt(direction[0]**2 + direction[1]**2)
-                direction = (direction[0] / norm, direction[1] / norm)
-                player1.rect.x += direction[0] * overlap / 2
-                player1.rect.y += direction[1] * overlap / 2
-                player2.rect.x -= direction[0] * overlap / 2
-                player2.rect.y -= direction[1] * overlap / 2
-
-        # Check for ring out (falling into void)
-        for i, player in enumerate(self.players):
-            if player.rect.top > self.void_y:
-                # Player has fallen into the void
-                player.damage = 100  # Max damage
-                self.tree_positions[i]["health"] = 0  # Destroy their tree
-                # Reset player position
-                player.rect.x = 200 if i == 0 else 550
-                player.rect.y = 400
-                player.fart_x = 0
-                player.fart_y = 0
+        # Remove this method or leave it empty
+        pass
 
     def draw_cherry_tree(self, x, height, health, flip=False, surface=None):
         if surface is None:
