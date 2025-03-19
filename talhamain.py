@@ -221,8 +221,8 @@ def main():
                         state = GameState.BATTLE
         
         if state == GameState.BATTLE:
-            # Draw the Japanese themed background and platform
-            bane.draw(window)
+            # Tegn banen med spillernes skadeprocent
+            bane.draw(window, spiller1, spiller2)
             
             # Only update players if not showing round start
             if not showing_round_start:

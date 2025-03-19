@@ -117,8 +117,11 @@ class Spiller:
         self.can_dash = False
     
     def update(self, platform):
+        # If already dead, stay dead and don't update position
         if self.is_dead:
-            return False
+            self.speed_y += GRAVITY  # Let them continue falling
+            self.body.y += self.speed_y
+            return True  # Keep returning True to indicate fallen state
         
         # Apply gravity
         self.speed_y += GRAVITY
@@ -128,9 +131,10 @@ class Spiller:
         # Apply air resistance
         self.speed_x *= AIR_RESISTANCE
         
-        # Check if fallen into void
+        # Check if fallen into void - make sure this only happens once
         if self.has_fallen():
             self.is_dead = True
+            self.speed_x = 0  # Stop horizontal movement when dead
             return True
         
         # Screen boundaries
@@ -141,7 +145,7 @@ class Spiller:
             self.body.right = WIDTH
             self.speed_x = 0
         
-        # Platform collision
+        # Platform collision - only check if not dead
         self.on_ground = False
         if (self.body.bottom >= platform.top and 
             self.body.left < platform.right and 

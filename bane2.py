@@ -68,7 +68,7 @@ class Bane:
             self.last_theme_change = current_time
 
     # Tegn banen med alle elementer 
-    def draw(self, surface: pygame.Surface):
+    def draw(self, surface: pygame.Surface, spiller1=None, spiller2=None):
         # Hent de aktuelle farver
         colors = self.get_current_colors()
         
@@ -156,9 +156,27 @@ class Bane:
         # Tegn snehætten med hvid farve
         pygame.draw.polygon(surface, (240, 240, 240), snow_cap)
         
-        # Tegn kirsebærtræer (stiliseret)
-        self.draw_cherry_tree(self.width * 0.18, self.height * 0.2, self.tree_positions[0]["health"], surface=surface)
-        self.draw_cherry_tree(self.width * 0.82, self.height * 0.2, self.tree_positions[1]["health"], flip=True, surface=surface)
+        # Tegn træerne med spillernes skadeprocent
+        left_damage = spiller1.damage if spiller1 else 0
+        right_damage = spiller2.damage if spiller2 else 0
+        
+        # Tegn venstre træ med spiller 1's skade
+        self.draw_cherry_tree(
+            self.tree_positions[0]["x"],
+            self.height,
+            self.tree_positions[0]["health"],
+            skadeprocent=left_damage,
+            surface=surface
+        )
+        
+        # Tegn højre træ med spiller 2's skade
+        self.draw_cherry_tree(
+            self.tree_positions[1]["x"],
+            self.height,
+            self.tree_positions[1]["health"],
+            skadeprocent=right_damage,
+            surface=surface
+        )
         
         # Tegn en torii-port silhuet (traditionel japansk port)
         torii_color = (180, 40, 40)  # Rød torii-port
@@ -254,52 +272,58 @@ class Bane:
         # Remove this method or leave it empty
         pass
 
-    def draw_cherry_tree(self, x, height, health, flip=False, surface=None):
+    def draw_cherry_tree(self, x, height, health, skadeprocent=0, flip=False, surface=None):
         if surface is None:
             return
             
-        # Træstamme - darker and more defined
-        trunk_width = self.width * 0.025
-        trunk_height = self.height * 0.15
+        # Beregn træets højde baseret på skadeprocent
+        # Jo højere skade, jo højere bliver træet
+        # Vi starter med normal højde og tilføjer ekstra højde baseret på skade
+        base_height = self.height * 0.15  # Normal højde
+        extra_height = (skadeprocent / 100) * (self.height * 0.2)  # Ekstra højde baseret på skade
+        total_height = base_height + extra_height
         
-        # Main trunk
+        # Træstamme - mørkere og mere defineret
+        trunk_width = self.width * 0.025  # Bredden af stammen
+        
+        # Lav træstammen
         trunk = pygame.Rect(
-            x - trunk_width // 2,
-            self.height * 0.7 - trunk_height,
+            x - trunk_width // 2,  # Centrer stammen på x-positionen
+            self.height * 0.7 - total_height,  # Start fra bunden og gå op
             trunk_width,
-            trunk_height
+            total_height
         )
-        # Draw trunk with darker brown and outline
-        pygame.draw.rect(surface, (45, 30, 20), trunk)
-        pygame.draw.rect(surface, (35, 20, 15), trunk, 2)
         
-        # Define tree foliage as connected circles in pixel art style
-        foliage_center_y = self.height * 0.7 - trunk_height - self.height * 0.08
-        foliage_radius = self.width * 0.06 * health  # Scale foliage with health
+        # Tegn stammen med mørkebrun farve og outline
+        pygame.draw.rect(surface, (45, 30, 20), trunk)  # Indre del af stammen
+        pygame.draw.rect(surface, (35, 20, 15), trunk, 2)  # Outline af stammen
         
-        # Draw main foliage shapes
+        # Beregn bladenes position og størrelse
+        # Bladene skal sidde i toppen af træet
+        foliage_center_y = self.height * 0.7 - total_height - self.height * 0.08
+        
+        # Størrelsen af bladene afhænger også lidt af skaden
+        foliage_radius = self.width * 0.06 * health * (1 + skadeprocent/200)
+        
+        # Positioner for de forskellige dele af bladene
+        # Vi laver flere cirkler der overlapper for at lave en pæn trækrone
         foliage_positions = [
-            (x, foliage_center_y),  # Center
-            (x - foliage_radius * 0.7, foliage_center_y + foliage_radius * 0.3),  # Left
-            (x + foliage_radius * 0.7, foliage_center_y + foliage_radius * 0.3),  # Right
-            (x, foliage_center_y + foliage_radius * 0.5),  # Bottom
+            (x, foliage_center_y),  # Midten
+            (x - foliage_radius * 0.7, foliage_center_y + foliage_radius * 0.3),  # Venstre
+            (x + foliage_radius * 0.7, foliage_center_y + foliage_radius * 0.3),  # Højre
+            (x, foliage_center_y + foliage_radius * 0.5),  # Bund
             (x, foliage_center_y - foliage_radius * 0.5),  # Top
         ]
         
-        # Calculate damage-based colors
+        # Beregn farver baseret på skade
+        # Jo mere skade, jo mere rødlig bliver træet
         damage_factor = 1 - health
         base_color = (
-            min(255, 200 + int(damage_factor * 55)),  # More red with damage
-            max(0, 100 - int(damage_factor * 100)),   # Less green with damage
-            max(0, 150 - int(damage_factor * 150))    # Less blue with damage
-        )
-        light_color = (
-            min(255, 255 - int(damage_factor * 73)),
-            max(0, 182 - int(damage_factor * 182)),
-            max(0, 193 - int(damage_factor * 193))
+            min(255, 200 + int(damage_factor * 55)),  # Mere rød ved skade
+            max(0, 100 - int(damage_factor * 100)),   # Mindre grøn ved skade
+            max(0, 150 - int(damage_factor * 150))    # Mindre blå ved skade
         )
         
-        # Draw foliage with damage-based colors
+        # Tegn alle blade
         for pos_x, pos_y in foliage_positions:
             pygame.draw.circle(surface, base_color, (int(pos_x), int(pos_y)), int(foliage_radius))
-            pygame.draw.circle(surface, light_color, (int(pos_x), int(pos_y)), int(foliage_radius * 0.85))
