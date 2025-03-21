@@ -132,7 +132,7 @@ class Spiller:
         self.speed_x *= AIR_RESISTANCE
         
         # Check if fallen into void - make sure this only happens once
-        if self.has_fallen():
+        if self.body.top > platform.bottom:
             self.is_dead = True
             self.speed_x = 0  # Stop horizontal movement when dead
             return True

@@ -242,12 +242,20 @@ def main():
                     waiting_for_respawn = True
                     respawn_timer = current_time
                     
-                    if fallen1:
+                    if fallen1 and not fallen2:
                         spiller2.points += 1
                         display_round_winner(window, "Blå Spiller", BLUE)
-                    else:
+                    elif fallen2 and not fallen1:
                         spiller1.points += 1
                         display_round_winner(window, "Rød Spiller", RED)
+                    elif fallen1 and fallen2:
+                        # If both fall, the one who fell last loses
+                        if spiller1.body.y > spiller2.body.y:
+                            spiller2.points += 1
+                            display_round_winner(window, "Blå Spiller", BLUE)
+                        else:
+                            spiller1.points += 1
+                            display_round_winner(window, "Rød Spiller", RED)
                     
                     # Check if game is over
                     if spiller1.points >= MAX_POINTS or spiller2.points >= MAX_POINTS:
